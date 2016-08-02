@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-    "log"
+	"log"
 	"os"
 	"os/user"
 	"strings"
@@ -20,29 +20,29 @@ const (
 	GET_TOKEN_PROFILE = "getToken"
 	TEMP_FILE_PATH    = "~/.aws/credentials.tmp"
 	ORIG_FILE_PATH    = "~/.aws/credentials"
-    DEFAULT_PROFILE   = "default"
+	DEFAULT_PROFILE   = "default"
 )
 
 type Config struct {
 	AWSAccessKeyId     string
 	AWSSecretAccessKey string
 	AWSSessionToken    string
-    AWSAssumeRoleArn   string
-    AWSDefaultProfile  string
+	AWSAssumeRoleArn   string
+	AWSDefaultProfile  string
 }
 
 func NewConfig() *Config {
-    return &Config {
-        AWSAssumeRoleArn: "",
-        AWSDefaultProfile: DEFAULT_PROFILE,
-    }
+	return &Config{
+		AWSAssumeRoleArn:  "",
+		AWSDefaultProfile: DEFAULT_PROFILE,
+	}
 }
 
 func main() {
 
 	token := getToken("Please enter MFA token: ")
 
-    conf := NewConfig()
+	conf := NewConfig()
 	var err error
 
 	session := session.New(&aws.Config{
@@ -54,25 +54,25 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-    args := os.Args[1:]
+	args := os.Args[1:]
 
 	if conf, err = getSessionToken(session, iam, token, args...); err != nil {
 		log.Fatal("Error while creating session: ", err.Error())
 	}
 
-    temp_path := expandPath(TEMP_FILE_PATH)
-    orig_path := expandPath(ORIG_FILE_PATH)
+	temp_path := expandPath(TEMP_FILE_PATH)
+	orig_path := expandPath(ORIG_FILE_PATH)
 
 	if temp_path[:2] == "~/" {
 		usr, _ := user.Current()
 		temp_path = usr.HomeDir + temp_path[1:]
 	}
 
-    c, _ := openConfig(&orig_path)
+	c, _ := openConfig(&orig_path)
 	writeTempConfig(c, conf, temp_path)
 
-    swapFiles(temp_path, orig_path)
-    log.Println("Credentials has been updated!")
+	swapFiles(temp_path, orig_path)
+	log.Println("Credentials has been updated!")
 }
 
 func expandPath(path string) string {
@@ -81,11 +81,11 @@ func expandPath(path string) string {
 		path = usr.HomeDir + path[1:]
 	}
 
-    return path
+	return path
 }
 
 func openConfig(filename *string) (*config.Config, error) {
-    return config.Read(*filename, "# ", "=", true, true)
+	return config.Read(*filename, "# ", "=", true, true)
 }
 
 func getToken(prompt string) string {
@@ -108,15 +108,15 @@ func getSessionToken(
 	user *iam.User,
 	token string, args ...string) (*Config, error) {
 
-    assume_role := ""
-    default_profile := DEFAULT_PROFILE
+	assume_role := ""
+	default_profile := DEFAULT_PROFILE
 
-    if len(args) > 0 {
-        assume_role = args[0]
-        if len(args) > 1 {
-            default_profile = args[1]
-        }
-    }
+	if len(args) > 0 {
+		assume_role = args[0]
+		if len(args) > 1 {
+			default_profile = args[1]
+		}
+	}
 
 	sn := strings.Replace(*user.Arn, ":user/", ":mfa/", 1)
 	in := sts.GetSessionTokenInput{
@@ -125,16 +125,16 @@ func getSessionToken(
 	}
 
 	out, err := sts.New(session).GetSessionToken(&in)
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	config := &Config{
 		AWSSessionToken:    *out.Credentials.SessionToken,
 		AWSSecretAccessKey: *out.Credentials.SecretAccessKey,
 		AWSAccessKeyId:     *out.Credentials.AccessKeyId,
-        AWSAssumeRoleArn:   assume_role,
-        AWSDefaultProfile:  default_profile,
+		AWSAssumeRoleArn:   assume_role,
+		AWSDefaultProfile:  default_profile,
 	}
 
 	return config, err
@@ -146,16 +146,16 @@ func writeTempConfig(c *config.Config, config *Config, tmp string) error {
 	c.AddOption("default", "aws_session_token", config.AWSSessionToken)
 	c.AddOption("default", "aws_secret_access_key", config.AWSSecretAccessKey)
 	c.AddOption("default", "role_arn", config.AWSAssumeRoleArn)
-    c.AddOption("default", "source_profile", config.AWSDefaultProfile)
+	c.AddOption("default", "source_profile", config.AWSDefaultProfile)
 
-    if config.AWSAssumeRoleArn == "" {
-        c.RemoveOption("default", "role_arn")
-        c.RemoveOption("default", "source_profile")
-    }
+	if config.AWSAssumeRoleArn == "" {
+		c.RemoveOption("default", "role_arn")
+		c.RemoveOption("default", "source_profile")
+	}
 
 	return c.WriteFile(tmp, 0644, "Updated by Boynux authenticator")
 }
 
 func swapFiles(orig, temp string) error {
-    return os.Rename(orig, temp)
+	return os.Rename(orig, temp)
 }
