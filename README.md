@@ -5,7 +5,7 @@ Basic MFA authenticator with assume role feature.
 
 Usage:
 
-  $ aws-authenticator
+    $ aws-authenticator
 
 Then enter MFA token at the prompt.
   
