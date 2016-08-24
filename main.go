@@ -36,7 +36,6 @@ type Config struct {
 // NewConfig returns an empty Config
 func NewConfig() *Config {
 	return &Config{
-		AWSAssumeRoleArn:  "", // TODO needed? It should be empty already
 		AWSDefaultProfile: defaultProfile,
 	}
 }
@@ -49,6 +48,7 @@ func main() {
 	token := getToken("Please enter MFA token: ")
 
 	conf := NewConfig()
+
 	var err error
 
 	session := session.New(&aws.Config{
@@ -68,12 +68,6 @@ func main() {
 
 	tempPath := expandPath(tempFilePath)
 	origPath := expandPath(origFilePath)
-
-	// TODO Do we really need this check? Isn't it done by expandPath() already ?
-	if tempPath[:2] == "~/" {
-		usr, _ := user.Current()
-		tempPath = usr.HomeDir + tempPath[1:]
-	}
 
 	c, _ := openConfig(&origPath)
 	writeTempConfig(c, conf, tempPath)
