@@ -1,4 +1,4 @@
-// main allows to update a the ~/.aws/credentials file of the user with a valid session token
+// main allows to update the file ~/.aws/credentials with a valid AWS session token.
 package main
 
 import (
@@ -18,15 +18,15 @@ import (
 )
 
 const (
-	GET_TOKEN_PROFILE = "getToken"
-	TEMP_FILE_PATH    = "~/.aws/credentials.tmp"
-	ORIG_FILE_PATH    = "~/.aws/credentials"
-	DEFAULT_PROFILE   = "default"
+	getTokenProfile = "getToken"
+	tempFilePath = "~/.aws/credentials.tmp"
+	origFilePath = "~/.aws/credentials"
+	defaultProfile = "default"
 )
 
 // Config represent the AWS user's connection information
 type Config struct {
-	AWSAccessKeyId     string
+	AWSAccessKeyID     string
 	AWSSecretAccessKey string
 	AWSSessionToken    string
 	AWSAssumeRoleArn   string
@@ -37,7 +37,7 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		AWSAssumeRoleArn:  "",  // TODO needed? It should be empty already
-		AWSDefaultProfile: DEFAULT_PROFILE,
+		AWSDefaultProfile: defaultProfile,
 	}
 }
 
@@ -52,7 +52,7 @@ func main() {
 	var err error
 
 	session := session.New(&aws.Config{
-		Credentials: credentials.NewSharedCredentials("", GET_TOKEN_PROFILE),
+		Credentials: credentials.NewSharedCredentials("", getTokenProfile),
 	})
 
 	var iam *iam.User
@@ -66,19 +66,19 @@ func main() {
 		log.Fatal("Error while creating session: ", err.Error())
 	}
 
-	temp_path := expandPath(TEMP_FILE_PATH)
-	orig_path := expandPath(ORIG_FILE_PATH)
+	tempPath := expandPath(tempFilePath)
+	origPath := expandPath(origFilePath)
 
 	// DO WE REALLY NEED THIS CHECK? Isn't it done by expandPath() already ?
-	if temp_path[:2] == "~/" {
+	if tempPath[:2] == "~/" {
 		usr, _ := user.Current()
-		temp_path = usr.HomeDir + temp_path[1:]
+		tempPath = usr.HomeDir + tempPath[1:]
 	}
 
-	c, _ := openConfig(&orig_path)
-	writeTempConfig(c, conf, temp_path)
+	c, _ := openConfig(&origPath)
+	writeTempConfig(c, conf, tempPath)
 
-	swapFiles(temp_path, orig_path)
+	swapFiles(tempPath, origPath)
 	log.Println("Credentials has been updated!")
 }
 
@@ -122,13 +122,13 @@ func getSessionToken(
 	token string,
 	args ...string) (*Config, error) {
 
-	assume_role := ""
-	default_profile := DEFAULT_PROFILE
+	assumeRole := ""
+	defaultProfile := defaultProfile
 
 	if len(args) > 0 {
-		assume_role = args[0]
+		assumeRole = args[0]
 		if len(args) > 1 {
-			default_profile = args[1]
+			defaultProfile = args[1]
 		}
 	}
 
@@ -146,9 +146,9 @@ func getSessionToken(
 	config := &Config{
 		AWSSessionToken:    *out.Credentials.SessionToken,
 		AWSSecretAccessKey: *out.Credentials.SecretAccessKey,
-		AWSAccessKeyId:     *out.Credentials.AccessKeyId,
-		AWSAssumeRoleArn:   assume_role,
-		AWSDefaultProfile:  default_profile,
+		AWSAccessKeyID:     *out.Credentials.AccessKeyId,
+		AWSAssumeRoleArn:   assumeRole,
+		AWSDefaultProfile:  defaultProfile,
 	}
 
 	return config, err
@@ -157,7 +157,7 @@ func getSessionToken(
 // writeTempConfig save the config in parameter to file tmp
 func writeTempConfig(c *config.Config, config *Config, tmp string) error {
 	c.AddSection("default")
-	c.AddOption("default", "aws_access_key_id", config.AWSAccessKeyId)
+	c.AddOption("default", "aws_access_key_id", config.AWSAccessKeyID)
 	c.AddOption("default", "aws_session_token", config.AWSSessionToken)
 	c.AddOption("default", "aws_secret_access_key", config.AWSSecretAccessKey)
 	c.AddOption("default", "role_arn", config.AWSAssumeRoleArn)
