@@ -1,3 +1,4 @@
+// main allows to update a the ~/.aws/credentials file of the user with a valid session token
 package main
 
 import (
@@ -23,6 +24,7 @@ const (
 	DEFAULT_PROFILE   = "default"
 )
 
+// Config represent the AWS user's connection information
 type Config struct {
 	AWSAccessKeyId     string
 	AWSSecretAccessKey string
@@ -31,9 +33,10 @@ type Config struct {
 	AWSDefaultProfile  string
 }
 
+// NewConfig returns an empty Config
 func NewConfig() *Config {
 	return &Config{
-		AWSAssumeRoleArn:  "",
+		AWSAssumeRoleArn:  "",  // TODO needed? It should be empty already
 		AWSDefaultProfile: DEFAULT_PROFILE,
 	}
 }
@@ -66,7 +69,7 @@ func main() {
 	temp_path := expandPath(TEMP_FILE_PATH)
 	orig_path := expandPath(ORIG_FILE_PATH)
 
-	// DO WE REALLY NEED THIS CHECK?
+	// DO WE REALLY NEED THIS CHECK? Isn't it done by expandPath() already ?
 	if temp_path[:2] == "~/" {
 		usr, _ := user.Current()
 		temp_path = usr.HomeDir + temp_path[1:]
