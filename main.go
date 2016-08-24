@@ -157,7 +157,7 @@ func writeTempConfig(c *config.Config, config *Config, tmp string) error {
 	c.AddOption("default", "role_arn", config.AWSAssumeRoleArn)
 	c.AddOption("default", "source_profile", config.AWSDefaultProfile)
 
-	// role_arn and source_profile only make sense if A
+	// role_arn and source_profile only make sense if AWSAssumeRoleArn is set
 	if config.AWSAssumeRoleArn == "" {
 		c.RemoveOption("default", "role_arn")
 		c.RemoveOption("default", "source_profile")
@@ -166,7 +166,7 @@ func writeTempConfig(c *config.Config, config *Config, tmp string) error {
 	return c.WriteFile(tmp, 0644, "Updated by Boynux authenticator")
 }
 
-// swapFiles renames file orig into file temp
+// swapFiles renames file temp into file orig
 func swapFiles(orig, temp string) error {
 	return os.Rename(orig, temp)
 }
